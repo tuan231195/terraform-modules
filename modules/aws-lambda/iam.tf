@@ -102,11 +102,14 @@ data "aws_iam_policy_document" "network" {
 	}
 }
 
-resource "aws_iam_role_policy" "network" {
+data "aws_iam_policy" "vpc_access_policy" {
+	arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "vpc_access_policy_attachment" {
 	count = var.vpc_config == null || local.use_predefined_role ? 0 : 1
 	role = aws_iam_role.lambda[0].id
-	name = "${var.function_name}-network"
-	policy = data.aws_iam_policy_document.network.json
+	policy_arn = data.aws_iam_policy.vpc_access_policy.arn
 }
 
 resource "aws_iam_role_policy" "additional" {

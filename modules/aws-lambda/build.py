@@ -44,7 +44,12 @@ def zip_file(source_dir, destination_file):
 
 def copy_source():
     if os.path.isfile(source_path):
-        shutil.copy(source_path, output_file)
+        name, ext = os.path.splitext(source_path)
+        if ext == '.zip':
+            shutil.copy(source_path, output_file)
+        else:
+            shutil.copy(source_path, dist_dir)
+            zip_file(dist_dir, output_file)
     else:
         rsync_pattern = shlex.split(query.get('rsync_pattern', ''))
         subprocess.run(['rsync', '-az', *rsync_pattern, '.', dist_dir], cwd=source_path)
