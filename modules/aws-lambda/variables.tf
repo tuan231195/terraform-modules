@@ -19,14 +19,12 @@ variable "source_path" {
 
 # Optional variables specific to this module.
 
-variable "role_arn" {
+variable "iam_role" {
 	description = "The role arn to be applied to the lambda function"
+	type = object({
+		arn = string
+	})
 	default = null
-}
-
-variable "use_predefined_role" {
-	description = "Whether to use a predefined role"
-	default = false
 }
 
 variable "rsync_pattern" {

@@ -7,8 +7,9 @@ module "lambda" {
 	function_name = "test-existing-role"
 	handler = "index.handler"
 	source_path = "${path.module}/build"
-	role_arn = aws_iam_role.lambda_role.arn
-	use_predefined_role = true
+	iam_role = {
+		arn = aws_iam_role.lambda_role.arn
+	}
 	runtime = "nodejs12.x"
 }
 

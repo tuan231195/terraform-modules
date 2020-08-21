@@ -1,7 +1,7 @@
 resource "aws_lambda_function" "lambda" {
 	function_name = var.function_name
 	description = var.description
-	role = var.role_arn != null ? var.role_arn : try(aws_iam_role.lambda[0].arn, null)
+	role = var.iam_role != null ? var.iam_role.arn : try(aws_iam_role.lambda[0].arn, null)
 	handler = var.handler
 	memory_size = var.memory_size
 	reserved_concurrent_executions = var.reserved_concurrent_executions
