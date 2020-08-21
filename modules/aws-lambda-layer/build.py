@@ -7,6 +7,9 @@ import sys
 import os
 import hashlib
 import base64
+import tempfile
+import time
+import zipfile
 import shlex
 
 query = json.load(sys.stdin)
@@ -25,9 +28,9 @@ def install_dependencies():
 
     if package_file_name == 'package.json':
         install_npm()
-    elif package_file == 'requirements.txt':
+    elif package_file_name == 'requirements.txt':
         install_pip()
-    elif package_file == 'Pipfile':
+    elif package_file_name == 'Pipfile':
         install_pip_env()
     else:
         copy_source()
@@ -39,8 +42,9 @@ def install_npm():
     dist_package_file = f'{install_dir}/package.json'
     os.makedirs(install_dir, exist_ok=True)
     shutil.copy(package_file, dist_package_file)
-    subprocess.run(
-        ['npm', 'install', '--production', '--no-optional', '--no-package-lock', '--prefix', f'{install_dir}/']
+    subprocess.check_call(
+        ['npm', 'install', '--production', '--no-optional', '--no-package-lock', '--prefix', f'{install_dir}/'],
+        stdout=sys.stderr
     )
 
 
@@ -48,8 +52,10 @@ def install_pip():
     assert package_file
     install_dir = '$DIST_DIR/python'
     os.makedirs(install_dir, exist_ok=True)
-    subprocess.run(
-        ['pip', 'install', '--target', install_dir, f'--requirement={package_file}']
+
+    subprocess.check_call(
+        ['pip', 'install', '--target', install_dir, f'--requirement={package_file}'],
+        stdout=sys.stderr
     )
 
 
@@ -59,12 +65,14 @@ def install_pip_env():
     install_dir = f'{dist_dir}/python'
     dist_requirement_file = f'{install_dir}/requirements.txt'
     os.makedirs(install_dir, exist_ok=True)
-    subprocess.run(
+    subprocess.check_call(
         ['pipenv', 'lock', '--requirements', '>', dist_requirement_file],
-        cwd=source_dir
+        cwd=source_dir,
+        stdout=sys.stderr
     )
-    subprocess.run(
-        ['pip', 'install', '--target', install_dir, f'--requirement={dist_requirement_file}']
+    subprocess.check_call(
+        ['pip', 'install', '--target', install_dir, f'--requirement={dist_requirement_file}'],
+        stdout=sys.stderr
     )
 
 
@@ -74,14 +82,8 @@ def copy_source():
     rsync_pattern = shlex.split(query.get('rsync_pattern', ''))
     install_dir = f'{dist_dir}/{source_type}'
     os.makedirs(install_dir, exist_ok=True)
-    subprocess.run(['rsync', '-az', *rsync_pattern, '.', install_dir], cwd=source_dir)
-
-
-def zip():
-    base = os.path.basename(output_file)
-    name = os.path.splitext(base)[0]
-    shutil.make_archive(name, 'zip', dist_dir)
-    shutil.move(base, dist_dir)
+    subprocess.check_call(['rsync', '-az', *rsync_pattern, '.', install_dir], cwd=source_dir,
+                          stdout=sys.stderr)
 
 
 def output():
@@ -100,8 +102,25 @@ def hash_file(filepath):
     return base64.b64encode(file_hash.digest()).decode('utf-8')
 
 
+def zip_file(source_dir, destination_file):
+    base = os.path.basename(destination_file)
+    name, _ = os.path.splitext(base)
+    temp_zip_file = os.path.join(tempfile.gettempdir(), str(time.time()) + '.zip')
+
+    new_zip = zipfile.ZipFile(temp_zip_file, 'w')
+    for root, dirs, files in os.walk(source_dir):
+        for file in files:
+            current_file = os.path.join(root, file)
+            info = zipfile.ZipInfo.from_file(current_file, arcname=os.path.relpath(current_file, source_dir))
+            info.date_time = (2000, 1, 1, 0, 0, 0)
+            with open(current_file, 'rb') as fd:
+                new_zip.writestr(info, fd.read(), compress_type=zipfile.ZIP_DEFLATED)
+    new_zip.close()
+    shutil.move(temp_zip_file, destination_file)
+
+
 if __name__ == '__main__':
     clean()
     install_dependencies()
-    zip()
+    zip_file(dist_dir, output_file)
     output()

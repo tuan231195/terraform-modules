@@ -1,0 +1,11 @@
+{
+  "name": "with-layer-built",
+  "version": "1.0.0",
+  "description": "",
+  "dependencies": {
+    "lodash": "latest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
