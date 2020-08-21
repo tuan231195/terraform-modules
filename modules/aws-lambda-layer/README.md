@@ -1,6 +1,6 @@
-### Disclaimer
+### Description
 
-This is a modified version of https://github.com/enter-at/terraform-aws-lambda-layer
+A terraform module that creates lambda layers. This is a modified version of https://github.com/enter-at/terraform-aws-lambda-layer
 
 ### Simple Example
 
