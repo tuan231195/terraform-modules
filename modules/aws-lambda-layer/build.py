@@ -115,6 +115,14 @@ def zip_file(source_dir, destination_file):
             info.date_time = (2000, 1, 1, 0, 0, 0)
             with open(current_file, 'rb') as fd:
                 new_zip.writestr(info, fd.read(), compress_type=zipfile.ZIP_DEFLATED)
+        for dir in dirs:
+            current_dir = os.path.join(root, dir)
+            if (os.path.islink(current_dir)):
+                 info = zipfile.ZipInfo(os.path.relpath(current_dir, source_dir))
+                 info.date_time = (2000, 1, 1, 0, 0, 0)
+                 info.create_system = 3
+                 info.external_attr = 2716663808
+                 new_zip.writestr(info, os.readlink(current_dir))
     new_zip.close()
     shutil.move(temp_zip_file, destination_file)
 
