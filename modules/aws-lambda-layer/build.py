@@ -82,7 +82,7 @@ def copy_source():
     rsync_pattern = shlex.split(query.get('rsync_pattern', ''))
     install_dir = f'{dist_dir}/{source_type}'
     os.makedirs(install_dir, exist_ok=True)
-    subprocess.check_call(['rsync', '-az', *rsync_pattern, '.', install_dir], cwd=source_dir,
+    subprocess.check_call(['rsync', '-avAXEWSlHh', *rsync_pattern, '--no-compress', '.', install_dir], cwd=source_dir,
                           stdout=sys.stderr)
 
 
